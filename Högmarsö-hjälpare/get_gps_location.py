@@ -50,10 +50,10 @@ def read_gps_data(serial_port='/dev/ttyUSB0', baudrate=9600):
         print(f"Error reading from {serial_port}: {e}")
         return None
 
-if __name__ == "__main__":
-    port = 'COM5'  # Update this with the correct port for your device
-    coordinates = read_gps_data(port)
-    if coordinates:
-        print(f"{coordinates[0]} {coordinates[1]}")
-    else:
-        print("No GPS data found.")
+# if __name__ == "__main__":
+#     port = 'COM5'  # Update this with the correct port for your device
+#     coordinates = read_gps_data(port)
+#     if coordinates:
+#         print(f"{coordinates[0]} {coordinates[1]}")
+#     else:
+#         print("No GPS data found.")
