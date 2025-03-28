@@ -46,6 +46,7 @@ def calculate_next_waypoint_distance():
 
 
 def get_route_coordinates(index=None):
+    GPX_PATH = "test/Skippo_Natt 2024_med_många_extra_WP_27-03-2025_2145.gpx"
     try:
         tree = ET.parse(GPX_PATH)
         root = tree.getroot()
@@ -77,37 +78,6 @@ def get_route_coordinates(index=None):
         print(f"Error reading GPX file: {e}")
         return []
 
-    # ex_coordinates_list = [
-    # [59.64795, 18.81407],
-    # [59.65146, 18.81607],
-    # [59.65504, 18.82024],
-    # [59.65853, 18.82716],
-    # [59.65902, 18.82829],
-    # [59.65938, 18.82986],
-    # [59.65948, 18.83138],
-    # [59.65865, 18.8372],
-    # [59.65293, 18.87052],
-    # [59.65101, 18.87234],
-    # [59.64929, 18.87299],
-    # [59.64887, 18.87241],
-    # [59.64338, 18.85999],
-    # [59.64306, 18.85859],
-    # [59.6435, 18.84758],
-    # [59.64365, 18.84625],
-    # [59.64338, 18.8312],
-    # [59.64375, 18.82092],
-    # [59.64385, 18.82008],
-    # [59.64656, 18.81569],
-    # [59.64747, 18.81447],
-    # [59.64794, 18.81407]
-    # ]
-
-    # if index is not None:
-    #     return ex_coordinates_list[index]
-    # # Otherwise, return the full list of coordinates
-    # else:
-    #     return ex_coordinates_list
-
 def get_2point_route_distance(coord1, coord2):
     # Extract latitude and longitude from both coordinate pairs
     lat1, lon1 = coord1
@@ -137,5 +107,3 @@ def get_total_route_distance(coordinates_list):
         total_distance += get_2point_route_distance(coordinates_list[i], coordinates_list[i + 1])
 
     return total_distance
-
-GPX_PATH = "test/Skippo_Natt 2024_med_många_extra_WP_27-03-2025_2145.gpx"
