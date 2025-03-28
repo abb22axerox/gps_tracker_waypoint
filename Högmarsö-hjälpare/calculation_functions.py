@@ -7,89 +7,106 @@ def get_time():
     now = datetime.now()
     return [now.hour, now.minute, now.second]
 
-def get_next_waypoint_distance():
-    """Finds the closest waypoint index and the next waypoint ahead, then calculates the distance to it."""
+def get_next_waypoint_distance(index):
     # current_location = GPS_location.read_gps_data()
-    current_location = [59.65504, 18.82024]
+    current_location = [59.75902, 18.62829]
     route = get_route_coordinates()
 
-    shortest_distance = float('inf')  
-    closest_waypoint_index = None  
-    next_waypoint = None  
+    return get_2point_route_distance(current_location, route[index])
+
+def calculate_next_waypoint_distance():
+    # current_location = GPS_location.read_gps_data()
+    current_location = [59.6419, 18.85279]
+    route = get_route_coordinates()
+
+    shortest_distance = float('inf')
+    closest_waypoint_index = None
+    next_waypoint_index = None
 
     for i, waypoint in enumerate(route):
         distance = get_2point_route_distance(waypoint, current_location)
+        print(distance)
 
-        # Track the closest waypoint index
         if distance < shortest_distance:
             shortest_distance = distance
             closest_waypoint_index = i
 
-        # Select the first waypoint ahead in the route order
-        if next_waypoint is None and i > closest_waypoint_index:
-            next_waypoint = waypoint
-            break  
+    # Ensure the next waypoint is ahead in the route
+    for i in range(closest_waypoint_index + 1, len(route)):
+        next_waypoint_index = i
+        break
 
-    if next_waypoint is None:
-        return None  # No waypoint ahead
+    if next_waypoint_index is None:
+        return None
 
-    # Calculate distance to the next waypoint
-    return [get_2point_route_distance(current_location, next_waypoint), closest_waypoint_index]
+    distance_to_next = get_2point_route_distance(current_location, route[next_waypoint_index])
+    
+    return [distance_to_next, next_waypoint_index]
+
 
 
 def get_route_coordinates(index=None):
-    # try:
-    #     # Parse the GPX file
-    #     tree = ET.parse(GPX_PATH)
-    #     root = tree.getroot()
+    try:
+        tree = ET.parse(GPX_PATH)
+        root = tree.getroot()
 
-    #     # GPX namespace (handle files with namespaces)
-    #     namespace = {"default": "http://www.topografix.com/GPX/1/1"}
+        route = []
+        prev_waypoint = None  # Variable to track the previous waypoint
 
-    #     coordinates = []
-        
-    #     # Find all track points (<trkpt>)
-    #     for trkpt in root.findall(".//default:trkpt", namespace):
-    #         lat = float(trkpt.attrib["lat"])
-    #         lon = float(trkpt.attrib["lon"])
-    #         coordinates.append([lat, lon])
+        # Find all route points (<rtept>)
+        for rtept in root.findall(".//rtept"):
+            lat = float(rtept.attrib["lat"])
+            lon = float(rtept.attrib["lon"])
+            waypoint = (lat, lon)  # Store as a tuple for comparison
 
-    #     return coordinates
+            if prev_waypoint is None or waypoint != prev_waypoint:
+                route.append([lat, lon])  # Add if it's not the same as the previous one
+                prev_waypoint = waypoint  # Update previous waypoint
+            # else:
+            #     print(f"Discarded duplicate waypoint: ({lat}, {lon})")
 
-    # except Exception as e:
-    #     print(f"Error reading GPX file: {e}")
-    #     return []
+        if not route:
+            print("Warning: No route points found in GPX file.")
 
-    ex_coordinates_list = [
-    [59.64795, 18.81407],
-    [59.65146, 18.81607],
-    [59.65504, 18.82024],
-    [59.65853, 18.82716],
-    [59.65902, 18.82829],
-    [59.65938, 18.82986],
-    [59.65948, 18.83138],
-    [59.65865, 18.8372],
-    [59.65293, 18.87052],
-    [59.65101, 18.87234],
-    [59.64929, 18.87299],
-    [59.64887, 18.87241],
-    [59.64338, 18.85999],
-    [59.64306, 18.85859],
-    [59.6435, 18.84758],
-    [59.64365, 18.84625],
-    [59.64338, 18.8312],
-    [59.64375, 18.82092],
-    [59.64385, 18.82008],
-    [59.64656, 18.81569],
-    [59.64747, 18.81447],
-    [59.64794, 18.81407]
-    ]
+        if index is not None:
+            return route[index]
+        else:
+            return route
 
-    if index is not None:
-        return ex_coordinates_list[index]
-    # Otherwise, return the full list of coordinates
-    else:
-        return ex_coordinates_list
+    except Exception as e:
+        print(f"Error reading GPX file: {e}")
+        return []
+
+    # ex_coordinates_list = [
+    # [59.64795, 18.81407],
+    # [59.65146, 18.81607],
+    # [59.65504, 18.82024],
+    # [59.65853, 18.82716],
+    # [59.65902, 18.82829],
+    # [59.65938, 18.82986],
+    # [59.65948, 18.83138],
+    # [59.65865, 18.8372],
+    # [59.65293, 18.87052],
+    # [59.65101, 18.87234],
+    # [59.64929, 18.87299],
+    # [59.64887, 18.87241],
+    # [59.64338, 18.85999],
+    # [59.64306, 18.85859],
+    # [59.6435, 18.84758],
+    # [59.64365, 18.84625],
+    # [59.64338, 18.8312],
+    # [59.64375, 18.82092],
+    # [59.64385, 18.82008],
+    # [59.64656, 18.81569],
+    # [59.64747, 18.81447],
+    # [59.64794, 18.81407]
+    # ]
+
+    # if index is not None:
+    #     return ex_coordinates_list[index]
+    # # Otherwise, return the full list of coordinates
+    # else:
+    #     return ex_coordinates_list
 
 def get_2point_route_distance(coord1, coord2):
     # Extract latitude and longitude from both coordinate pairs
@@ -121,4 +138,4 @@ def get_total_route_distance(coordinates_list):
 
     return total_distance
 
-GPX_PATH = "example/path"
+GPX_PATH = "test/Skippo_Natt 2024_med_många_extra_WP_27-03-2025_2145.gpx"
