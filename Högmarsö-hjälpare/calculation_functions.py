@@ -8,15 +8,6 @@ def get_time():
     now = datetime.now()
     return [now.hour, now.minute, now.second, now.microsecond]
 
-def convert_unit(unit, value):
-    if unit == 'seconds':
-        seconds = (value[0] * 3600 +
-        value[1] * 60 +
-        value[2] +
-        value[3] / 1_000_000)
-
-        return seconds
-
 def get_route_coordinates(index=None):
     GPX_PATH = "test/Skippo_Test rutt_25-03-2025_2232.gpx"
     try:
@@ -103,9 +94,29 @@ def get_speed():
 
     return distance / time_diff
 
+def convert_unit(operation, value):
+    if operation == 'to-seconds':
+        seconds = (value[0] * 3600 +
+        value[1] * 60 +
+        value[2] +
+        value[3] / 1_000_000)
+
+        return seconds
+    
+    elif operation == 'format-seconds':
+        # Extract the hour, minute, second, and microseconds parts
+        value_h = int(value // 3600) % 24
+        remaining_seconds = value % 3600
+        value_m = int(remaining_seconds // 60)
+        value_s = int(remaining_seconds % 60)
+        fraction = value - int(value)
+        value_micro = int(round(fraction * 1_000_000))
+
+        return [value_h, value_m, value_s, value_micro]
+
 def calculate_eta_for_waypoints(planned_start_time, planned_speed, index=None):
     route = get_route_coordinates()  # Assumes route[0] is the planned starting waypoint
-    start_time = convert_unit('seconds', planned_start_time)
+    start_time = convert_unit('to-seconds', planned_start_time)
 
     route_eta_list = []
     cumulative_distance = 0.0
@@ -119,15 +130,8 @@ def calculate_eta_for_waypoints(planned_start_time, planned_speed, index=None):
         travel_time_seconds = (cumulative_distance / planned_speed) * 3600
         eta_seconds = start_time + travel_time_seconds
 
-        # Extract the hour, minute, second, and microseconds parts
-        eta_h = int(eta_seconds // 3600) % 24
-        remaining_seconds = eta_seconds % 3600
-        eta_m = int(remaining_seconds // 60)
-        eta_s = int(remaining_seconds % 60)
-        fraction = eta_seconds - int(eta_seconds)
-        eta_micro = int(round(fraction * 1_000_000))
-
-        route_eta_list.append((waypoint, [eta_h, eta_m, eta_s, eta_micro]))
+        formatted_eta = convert_unit('format-seconds', eta_seconds)
+        route_eta_list.append((waypoint, formatted_eta))
         prev_waypoint = waypoint  # Update previous waypoint for next iteration
 
     if index is not None:
@@ -138,29 +142,22 @@ def calculate_eta_for_waypoints(planned_start_time, planned_speed, index=None):
 def get_estimated_delay(planned_start_time, planned_speed, waypoint):
     # current_location = GPS_location.read_gps_data()
     current_location = [59.64795, 18.81407]
-    planned_eta = convert_unit('seconds', calculate_eta_for_waypoints(planned_start_time, planned_speed, waypoint)[1])
-    start_time = convert_unit('seconds', planned_start_time)
+    planned_eta = convert_unit('to-seconds', calculate_eta_for_waypoints(planned_start_time, planned_speed, waypoint)[1])
+    start_time = convert_unit('to-seconds', planned_start_time)
     route = get_route_coordinates()
     
     remaining_distance = get_2point_route_distance(current_location, route[waypoint])
     travel_time_seconds = (remaining_distance / planned_speed) * 3600
     eta_seconds = start_time + travel_time_seconds
-
     # Calculate raw delay difference
     raw_delay = eta_seconds - planned_eta
     # Determine if delay is positive (True if late, False if early)
     is_delay_positive = raw_delay > 0
-    # Use absolute value for the delay time
     delay = abs(raw_delay)
-
-    # Convert delay (in seconds) to HH:MM:SS
-    delay_h = int(delay // 3600) % 24
-    delay_m = int((delay % 3600) // 60)
-    delay_s = int(delay % 60)
-
-    # Append remaining_distance, delay time as a list, and the boolean flag
+    
+    formatted_delay = convert_unit('format-seconds', delay)
     delay_list = []
-    delay_list.append([remaining_distance, [delay_h, delay_m, delay_s], is_delay_positive])
+    delay_list.append([remaining_distance, formatted_delay, is_delay_positive])
 
     return delay_list
 
@@ -170,31 +167,31 @@ def get_estimated_delay(planned_start_time, planned_speed, waypoint):
 
 
 
-def calculate_next_waypoint_distance():
-    # current_location = GPS_location.read_gps_data()
-    current_location = [59.6419, 18.85279]
-    route = get_route_coordinates()
+# def calculate_nearest_waypoint_distance():
+#     # current_location = GPS_location.read_gps_data()
+#     current_location = [59.6419, 18.85279]
+#     route = get_route_coordinates()
 
-    shortest_distance = float('inf')
-    closest_waypoint_index = None
-    next_waypoint_index = None
+#     shortest_distance = float('inf')
+#     closest_waypoint_index = None
+#     next_waypoint_index = None
 
-    for i, waypoint in enumerate(route):
-        distance = get_2point_route_distance(waypoint, current_location)
-        print(distance)
+#     for i, waypoint in enumerate(route):
+#         distance = get_2point_route_distance(waypoint, current_location)
+#         print(distance)
 
-        if distance < shortest_distance:
-            shortest_distance = distance
-            closest_waypoint_index = i
+#         if distance < shortest_distance:
+#             shortest_distance = distance
+#             closest_waypoint_index = i
 
-    # Ensure the next waypoint is ahead in the route
-    for i in range(closest_waypoint_index + 1, len(route)):
-        next_waypoint_index = i
-        break
+#     # Ensure the next waypoint is ahead in the route
+#     for i in range(closest_waypoint_index + 1, len(route)):
+#         next_waypoint_index = i
+#         break
 
-    if next_waypoint_index is None:
-        return None
+#     if next_waypoint_index is None:
+#         return None
 
-    distance_to_next = get_2point_route_distance(current_location, route[next_waypoint_index])
+#     distance_to_next = get_2point_route_distance(current_location, route[next_waypoint_index])
     
-    return [distance_to_next, next_waypoint_index]
+#     return [distance_to_next, next_waypoint_index]

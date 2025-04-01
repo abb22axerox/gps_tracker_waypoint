@@ -16,4 +16,4 @@ from calculation_functions import get_route_coordinates as GRC
 #     eta = CF.calculate_eta_for_waypoints(CF.get_time(), 10, i)
 #     print(eta)
 
-print(CF.get_estimated_delay(CF.get_time(), 8, 1))
+print(CF.get_estimated_delay(CF.get_time(), 8, 3))
