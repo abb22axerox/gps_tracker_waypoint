@@ -154,10 +154,16 @@ def get_estimated_delay(planned_start_time, planned_speed, waypoint):
     # Determine if delay is positive (True if late, False if early)
     is_delay_positive = raw_delay > 0
     delay = abs(raw_delay)
+
+    # Calculate throttle_alert
+    max_delay_threshold = 300  # Maximum delay threshold in seconds (e.g., 5 minutes)
+    normalized_delay = min(delay, max_delay_threshold) / max_delay_threshold
+    throttle_alert = normalized_delay if is_delay_positive else -normalized_delay
     
     formatted_delay = convert_unit('format-seconds', delay)
     delay_list = []
-    delay_list.append([remaining_distance, formatted_delay, is_delay_positive])
+    delay_list.append([remaining_distance, formatted_delay, is_delay_positive, throttle_alert])
+
 
     return delay_list
 
