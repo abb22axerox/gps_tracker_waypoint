@@ -1,23 +1,25 @@
-import os
 import time
-
 import calculation_functions as CF
-from calculation_functions import get_route_coordinates as GRC
-
-def clear_terminal():
-    os.system('cls' if os.name == 'nt' else 'clear')
 
 planned_start_time = CF.get_time()
 planned_speed = 9  # knots
 
 route_eta_list = CF.calculate_eta_for_waypoints(planned_start_time, planned_speed)
 
-while True:
-    clear_terminal()
-    print(CF.get_estimated_delay(planned_start_time, route_eta_list, 1))
-    time.sleep(1)
+try:
+    while True:
+        # Fetch the latest delay stats
+        delay_stats = CF.get_estimated_delay(planned_start_time, route_eta_list, 1)
 
-
+        # Overwrite the terminal output
+        print("\033[H\033[J", end="")  # Clear the screen using ANSI escape codes
+        print(f"Remaining Distance: {delay_stats[0][0]:.2f} NM")
+        print(f"Formatted Delay: {delay_stats[0][1]}")
+        print(f"Is Delay Positive (Late): {delay_stats[0][2]}")
+        print(f"Throttle Alert: {delay_stats[0][3]:.2f}")
+        print("-" * 40)
+except KeyboardInterrupt:
+    print("Program terminated by user.")
 
 
 
