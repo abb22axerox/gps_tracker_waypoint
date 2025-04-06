@@ -70,30 +70,6 @@ def get_total_route_distance(coordinates_list):
 
     return total_distance
 
-def get_speed():
-    current_location = [59.75902, 18.62829]
-    time1 = get_time()
-
-    time.sleep(0.5)
-
-    current_location2 = [59.75903, 18.62831]
-    time2 = get_time()
-
-    distance = get_2point_route_distance(current_location, current_location2)
-
-    # Convert time difference to seconds (including microseconds)
-    time_diff = ((time2[0] - time1[0]) * 3600 +
-                 (time2[1] - time1[1]) * 60 +
-                 (time2[2] - time1[2]) +
-                 (time2[3] - time1[3]) / 1_000_000)  # Convert microseconds to seconds
-
-    if time_diff == 0:
-        return 0.0
-
-    time_diff = time_diff / 3600  # Convert seconds to hours
-
-    return distance / time_diff
-
 def convert_unit(operation, value):
     if operation == 'to-seconds':
         seconds = (value[0] * 3600 +
@@ -113,6 +89,22 @@ def convert_unit(operation, value):
         value_micro = int(round(fraction * 1_000_000))
 
         return [value_h, value_m, value_s, value_micro]
+
+def get_speed():
+    current_location = [59.75902, 18.62829]
+    time1 = convert_unit('to-seconds', get_time())
+    time.sleep(0.5)
+    current_location2 = [59.75903, 18.62831]
+    time2 = convert_unit('to-seconds', get_time())
+    time_diff = time2 - time1
+    distance = get_2point_route_distance(current_location, current_location2)
+
+    if time_diff == 0:
+        return 0.0
+
+    time_diff = time_diff / 3600  # Convert seconds to hours
+
+    return distance / time_diff
 
 def calculate_eta_for_waypoints(planned_start_time, planned_speed, index=None):
     route = get_route_coordinates()  # Assumes route[0] is the planned starting waypoint
@@ -139,33 +131,32 @@ def calculate_eta_for_waypoints(planned_start_time, planned_speed, index=None):
     else:
         return route_eta_list
 
-def get_estimated_delay(planned_start_time, planned_speed, waypoint):
+def get_estimated_delay(start_time, eta_list, waypoint_index):
+    route = get_route_coordinates()
     # current_location = GPS_location.read_gps_data()
     current_location = [59.64795, 18.81407]
-    planned_eta = convert_unit('to-seconds', calculate_eta_for_waypoints(planned_start_time, planned_speed, waypoint)[1])
-    start_time = convert_unit('to-seconds', planned_start_time)
-    route = get_route_coordinates()
-    
-    remaining_distance = get_2point_route_distance(current_location, route[waypoint])
-    travel_time_seconds = (remaining_distance / planned_speed) * 3600
-    eta_seconds = start_time + travel_time_seconds
-    # Calculate raw delay difference
-    raw_delay = eta_seconds - planned_eta
-    # Determine if delay is positive (True if late, False if early)
+    current_speed = get_speed()
+
+    planned_start_time = convert_unit('to-seconds', start_time)
+    planned_eta = convert_unit('to-seconds', eta_list[waypoint_index][1])
+    remaining_distance = get_2point_route_distance(current_location, route[waypoint_index])
+    travel_time_seconds = (remaining_distance / current_speed) * 3600
+    current_eta = planned_start_time + travel_time_seconds
+
+    # Calculate delay with tolerance for floating-point precision
+    raw_delay = current_eta - planned_eta
+    raw_delay = 0 if abs(raw_delay) < 1e-6 else raw_delay
+
+    # True if late, False if early
     is_delay_positive = raw_delay > 0
     delay = abs(raw_delay)
+    formatted_delay = convert_unit('format-seconds', delay)
 
     # Calculate throttle_alert
-    max_delay_threshold = 300  # Maximum delay threshold in seconds (e.g., 5 minutes)
-    normalized_delay = min(delay, max_delay_threshold) / max_delay_threshold
-    throttle_alert = normalized_delay if is_delay_positive else -normalized_delay
-    
-    formatted_delay = convert_unit('format-seconds', delay)
-    delay_list = []
-    delay_list.append([remaining_distance, formatted_delay, is_delay_positive, throttle_alert])
+    max_delay_threshold = 300  # 5 minutes
+    throttle_alert = (min(delay, max_delay_threshold) / max_delay_threshold) * (1 if is_delay_positive else -1)
 
-
-    return delay_list
+    return [[remaining_distance, formatted_delay, is_delay_positive, throttle_alert]]
 
 
 
